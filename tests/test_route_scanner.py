@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 
 import pytest
 from bleak.backends.device import BLEDevice
-from route import PointType, Route, RoutePointDualSensor, RouteTime, Sensor
-from route_timer import scan_loop
-from scanner import BluetoothScanner, DeviceReading
+
+from bluetooth_route_timer.route import PointType, Route, RoutePointDualSensor, RouteTime, Sensor
+from bluetooth_route_timer.route_timer import scan_loop
+from bluetooth_route_timer.scanner import BluetoothScanner, DeviceReading
 
 # Test route definition
 TEST_ROUTE = Route(

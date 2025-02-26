@@ -1,5 +1,5 @@
 [project]
-name = "bluetooth-route-timer"
+name = "bluetooth_route_timer"
 version = "0.1.0"
 description = "Time routes using Bluetooth sensors"
 requires-python = ">=3.13.2"

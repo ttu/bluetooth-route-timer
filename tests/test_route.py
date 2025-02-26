@@ -3,7 +3,8 @@
 from datetime import datetime, timedelta
 
 import pytest
-from route import (
+
+from bluetooth_route_timer.route import (
     PointType,
     Route,
     RoutePassage,

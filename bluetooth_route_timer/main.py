@@ -3,9 +3,9 @@
 import asyncio
 import logging
 
-from route import PointType, Route, RoutePointDualSensor, RoutePointSingleSensor, Sensor
-from route_timer import scan_loop
-from scanner import BluetoothScanner
+from bluetooth_route_timer.route import PointType, Route, RoutePointDualSensor, RoutePointSingleSensor, Sensor
+from bluetooth_route_timer.route_timer import scan_loop
+from bluetooth_route_timer.scanner import BluetoothScanner
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

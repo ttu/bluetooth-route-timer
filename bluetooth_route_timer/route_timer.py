@@ -3,8 +3,8 @@
 import asyncio
 import logging
 
-from route import Route, SignalReading
-from scanner import BluetoothScanner
+from bluetooth_route_timer.route import Route
+from bluetooth_route_timer.scanner import BluetoothScanner
 
 # Configure logging
 logger = logging.getLogger(__name__)

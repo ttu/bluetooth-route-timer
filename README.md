@@ -38,7 +38,7 @@ uv pip install -e .
 Run the application:
 
 ```bash
-python bluetooth-route-timer/main.py
+python bluetooth_route_timer/main.py
 ```
 
 ## Development

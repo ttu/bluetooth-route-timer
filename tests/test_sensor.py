@@ -3,7 +3,8 @@
 from datetime import datetime
 
 import pytest
-from route import Sensor
+
+from bluetooth_route_timer.route import Sensor
 
 
 @pytest.fixture

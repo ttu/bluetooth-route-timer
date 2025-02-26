@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from route import Route
+from route import Route, SignalReading
 from scanner import BluetoothScanner
 
 # Configure logging
@@ -47,7 +47,7 @@ async def scan_loop(scanner: BluetoothScanner, route: Route) -> Route:
                             absolute_end_timer = asyncio.create_task(asyncio.sleep(ABSOLUTE_END_TIMER_DURATION_SEC))
                             logger.info(f"Starting {ABSOLUTE_END_TIMER_DURATION_SEC} second absolute timer...")
 
-                        if last_end_signal is None or end_signal[1] > last_end_signal[1]:
+                        if last_end_signal is None or end_signal.strength > last_end_signal.strength:
                             last_end_signal = end_signal
 
                             # Reset the 5-second timer on new strongest signal

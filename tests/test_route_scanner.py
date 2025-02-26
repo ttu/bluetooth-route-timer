@@ -1,12 +1,12 @@
 """Tests for route scanner functionality."""
 
 import asyncio
+from collections.abc import AsyncGenerator
 from datetime import datetime, timedelta
-from typing import AsyncGenerator
 
 import pytest
 from bleak.backends.device import BLEDevice
-from route import PointType, Route, RoutePointDualSensor, Sensor
+from route import PointType, Route, RoutePointDualSensor, RouteTime, Sensor
 from route_timer import scan_loop
 from scanner import BluetoothScanner, DeviceReading
 
@@ -144,7 +144,8 @@ async def test_scan_loop_basic_functionality(mock_readings, caplog):
 
     # Verify the final time calculation
     total_time = finished_route.get_total_time()
-    assert total_time[2] == 11.0
+    assert isinstance(total_time, RouteTime)
+    assert total_time.duration_seconds == 11.0
 
 
 @pytest.mark.asyncio

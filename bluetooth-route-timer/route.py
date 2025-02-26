@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Dict, List, Optional, Tuple
 
 
 class PointType(Enum):
@@ -26,7 +25,7 @@ class Sensor:
 
     name: str
     address: str
-    rssi_history: Dict[datetime, float] = field(default_factory=dict)
+    rssi_history: dict[datetime, float] = field(default_factory=dict)
 
     def add_rssi(self, rssi: float, timestamp: datetime | None = None) -> None:
         """Add RSSI reading with timestamp."""
@@ -38,6 +37,19 @@ class Sensor:
 
 
 @dataclass
+class SignalReading:
+    """Represents a signal reading with timestamp and strength.
+
+    Args:
+        timestamp: When the signal was recorded
+        strength: Signal strength in dBm
+    """
+
+    timestamp: datetime
+    strength: float
+
+
+@dataclass
 class RoutePoint(ABC):
     """Abstract base class for a point on the route."""
 
@@ -45,11 +57,11 @@ class RoutePoint(ABC):
     name: str
 
     @abstractmethod
-    def get_strongest_signal(self) -> Optional[Tuple[datetime, float]]:
+    def get_strongest_signal(self) -> SignalReading | None:
         """Get timestamp when the point had strongest signal.
 
         Returns:
-            Tuple of (timestamp, signal_strength) if sensors have readings,
+            SignalReading with timestamp and signal strength if sensors have readings,
             None otherwise.
         """
         pass
@@ -65,11 +77,11 @@ class RoutePointSingleSensor(RoutePoint):
 
     sensor: Sensor
 
-    def get_strongest_signal(self) -> Optional[Tuple[datetime, float]]:
+    def get_strongest_signal(self) -> SignalReading | None:
         """Get timestamp when the sensor had strongest signal.
 
         Returns:
-            Tuple of (timestamp, signal_strength) if sensor has readings,
+            SignalReading with timestamp and signal strength if sensor has readings,
             None otherwise.
         """
         if not self.sensor.has_readings():
@@ -77,7 +89,7 @@ class RoutePointSingleSensor(RoutePoint):
 
         # Find timestamp with strongest signal
         strongest_time = max(self.sensor.rssi_history.keys(), key=lambda t: self.sensor.rssi_history[t])
-        return strongest_time, self.sensor.rssi_history[strongest_time]
+        return SignalReading(timestamp=strongest_time, strength=self.sensor.rssi_history[strongest_time])
 
     def has_sensor(self, sensor: Sensor) -> bool:
         """Check if the point has a specific sensor."""
@@ -91,11 +103,11 @@ class RoutePointDualSensor(RoutePoint):
     sensor1: Sensor
     sensor2: Sensor
 
-    def get_strongest_signal(self) -> Optional[Tuple[datetime, float]]:
+    def get_strongest_signal(self) -> SignalReading | None:
         """Get timestamp when both sensors had strongest combined signal.
 
         Returns:
-            Tuple of (timestamp, combined_signal_strength) if both sensors have readings
+            SignalReading with timestamp and combined signal strength if both sensors have readings
             at the same time, None otherwise.
 
         When multiple timestamps have equal combined signal strength, selects the one
@@ -132,11 +144,41 @@ class RoutePointDualSensor(RoutePoint):
             )
 
         combined_signal = self.sensor1.rssi_history[strongest_time] + self.sensor2.rssi_history[strongest_time]
-        return strongest_time, combined_signal
+        return SignalReading(timestamp=strongest_time, strength=combined_signal)
 
     def has_sensor(self, sensor: Sensor) -> bool:
         """Check if the point has a specific sensor."""
         return sensor in (self.sensor1, self.sensor2)
+
+
+@dataclass
+class RoutePassage:
+    """Represents a passage through a route point.
+
+    Args:
+        point: The route point that was passed
+        timestamp: When the point was passed
+        signal_strength: Signal strength at the point
+    """
+
+    point: RoutePoint
+    timestamp: datetime
+    signal_strength: float
+
+
+@dataclass
+class RouteTime:
+    """Represents the timing information for a route.
+
+    Args:
+        start_time: When the route was started
+        end_time: When the route was completed
+        duration_seconds: Total duration in seconds
+    """
+
+    start_time: datetime
+    end_time: datetime
+    duration_seconds: float
 
 
 @dataclass
@@ -146,32 +188,31 @@ class Route:
     name: str
     start: RoutePoint
     end: RoutePoint
-    checkpoints: List[RoutePoint] = field(default_factory=list)
+    checkpoints: list[RoutePoint] = field(default_factory=list)
 
-    def get_all_points(self) -> List[RoutePoint]:
+    def get_all_points(self) -> list[RoutePoint]:
         """Get all points in order: start -> checkpoints -> end."""
         return [self.start] + self.checkpoints + [self.end]
 
-    def get_point_passages(self) -> List[tuple[RoutePoint, datetime, float]]:
+    def get_point_passages(self) -> list[RoutePassage]:
         """Get list of points passed in chronological order with signal strengths."""
         passages = []
         for point in self.get_all_points():
             signal = point.get_strongest_signal()
             if signal:
-                time, strength = signal
-                passages.append((point, time, strength))
+                passages.append(RoutePassage(point=point, timestamp=signal.timestamp, signal_strength=signal.strength))
 
         # Sort by timestamp
-        return sorted(passages, key=lambda x: x[1])
+        return sorted(passages, key=lambda x: x.timestamp)
 
     def is_end_sensor(self, sensor: Sensor) -> bool:
         return self.end.has_sensor(sensor)
 
-    def get_total_time(self) -> tuple[datetime, datetime, float] | None:
+    def get_total_time(self) -> RouteTime | None:
         """Calculate total time from start to end point.
 
         Returns:
-            Tuple of (start_time, end_time, duration_in_seconds) if both points
+            RouteTime with start_time, end_time, and duration if both points
             have signals, None otherwise.
         """
         start_signal = self.start.get_strongest_signal()
@@ -180,11 +221,9 @@ class Route:
         if not start_signal or not end_signal:
             return None
 
-        start_time, _ = start_signal
-        end_time, _ = end_signal
-        duration = (end_time - start_time).total_seconds()
+        duration = (end_signal.timestamp - start_signal.timestamp).total_seconds()
 
-        return start_time, end_time, duration
+        return RouteTime(start_time=start_signal.timestamp, end_time=end_signal.timestamp, duration_seconds=duration)
 
     def get_mac_to_sensor_lookup(self) -> dict:
         """Create mapping of MAC addresses to sensors for the route.

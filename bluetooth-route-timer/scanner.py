@@ -1,9 +1,9 @@
 """Bluetooth scanner module for discovering and connecting to BLE sensors."""
 
 import asyncio
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
-from typing import AsyncGenerator
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice

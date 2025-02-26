@@ -60,17 +60,19 @@ async def main():
         finished_route = await scan_loop(scanner, ROUTE_SINGLE_SENSOR)
 
         total_time = finished_route.get_total_time()
-        start_time, end_time, duration = total_time
         logger.info(
-            f"New best time: {duration:.1f} seconds "
-            f"(from {start_time.strftime('%H:%M:%S')} "
-            f"to {end_time.strftime('%H:%M:%S')})"
+            f"New best time: {total_time.duration_seconds:.1f} seconds "
+            f"(from {total_time.start_time.strftime('%H:%M:%S')} "
+            f"to {total_time.end_time.strftime('%H:%M:%S')})"
         )
 
         passages = finished_route.get_point_passages()
-        logger.info("Route passages detected:")
-        for point, time, strength in passages:
-            logger.info(f"Passed {point.name} at {time.strftime('%H:%M:%S')} with strength {strength:.1f} dBm")
+        logger.info(f"Detected {len(passages)} passages:")
+        for passage in passages:
+            logger.info(
+                f"- {passage.point.name} at {passage.timestamp.strftime('%H:%M:%S.%f')[:-3]} "
+                f"(signal: {passage.signal_strength:.1f} dBm)"
+            )
     except KeyboardInterrupt:
         # Handle Ctrl+C/Cmd+C gracefully
         print("Stopping scanner...")

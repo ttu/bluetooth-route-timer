@@ -53,7 +53,9 @@ class MockScanner(BluetoothScanner):
     """Mock scanner that yields predefined readings."""
 
     def __init__(self, readings: list[DeviceReading]):
-        super().__init__()
+        # Initialize with the known addresses from TEST_ROUTE
+        known_addresses = TEST_ROUTE.get_known_addresses()
+        super().__init__(known_addresses=known_addresses)
         self.readings = readings
         self.stopped = False
         self._scan_task: asyncio.Task | None = None

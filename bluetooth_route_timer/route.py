@@ -239,3 +239,11 @@ class Route:
             elif isinstance(point, RoutePointSingleSensor):
                 lookup[point.sensor.address] = point.sensor
         return lookup
+
+    def get_known_addresses(self) -> set[str]:
+        """Get the set of known MAC addresses for all sensors in the route.
+
+        Returns:
+            Set of MAC addresses for all sensors in the route.
+        """
+        return set(self.get_mac_to_sensor_lookup().keys())

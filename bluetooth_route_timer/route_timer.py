@@ -26,7 +26,7 @@ async def scan_loop(scanner: BluetoothScanner, route: Route) -> Route:
         async for reading in scanner.scan_devices():
             # Check if either timer has completed
             if (end_timer and end_timer.done()) or (absolute_end_timer and absolute_end_timer.done()):
-                timer_type = "completion" if end_timer.done() else "absolute"
+                timer_type = "completion" if end_timer and end_timer.done() else "absolute"
                 logger.info(f"{timer_type.capitalize()} timer expired, ending scan...")
                 break
 

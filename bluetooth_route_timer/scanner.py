@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Set
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice
@@ -26,9 +27,30 @@ class DeviceReading:
 
 
 class BluetoothScanner:
-    def __init__(self):
+    def __init__(self, known_addresses: Set[str]):
+        """Initialize the Bluetooth scanner.
+
+        Args:
+            known_addresses: Set of MAC addresses to filter devices.
+                            Only devices with these addresses will be processed.
+        """
         self._scanner: BleakScanner | None = None
         self._device_queue: asyncio.Queue[DeviceReading] = asyncio.Queue()
+        self._known_addresses: Set[str] = known_addresses
+
+    async def _device_found(self, device: BLEDevice, advertisement_data: AdvertisementData) -> None:
+        """Process a found device.
+
+        Args:
+            device: The Bluetooth device that was detected
+            advertisement_data: Advertisement data from the device
+        """
+        # Only process devices with known MAC addresses
+        if device.address not in self._known_addresses:
+            return
+
+        reading = DeviceReading(device=device, timestamp=datetime.now(), rssi=advertisement_data.rssi)
+        await self._device_queue.put(reading)
 
     async def scan_devices(self) -> AsyncGenerator[DeviceReading, None]:
         """Scan for BLE devices and yield them as they are discovered.
@@ -37,12 +59,7 @@ class BluetoothScanner:
         Yields:
             DeviceReading objects as devices are discovered.
         """
-
-        async def _device_found(device: BLEDevice, advertisement_data: AdvertisementData) -> None:
-            reading = DeviceReading(device=device, timestamp=datetime.now(), rssi=advertisement_data.rssi)
-            await self._device_queue.put(reading)
-
-        self._scanner = BleakScanner(detection_callback=_device_found, cb=dict(use_bdaddr=True))
+        self._scanner = BleakScanner(detection_callback=self._device_found, cb=dict(use_bdaddr=True))
         await self._scanner.start()
 
         try:
